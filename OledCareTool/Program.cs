@@ -58,6 +58,10 @@ namespace OledCareTool
         private System.Windows.Forms.Timer testTimeoutTimer;
         private bool monitorMissingAlerted = false;
 
+        private System.Windows.Forms.Timer disableTimer;
+        private ToolStripMenuItem disableMenuItem;
+        private bool isTemporarilyDisabled = false;
+
         public OledAppContext()
         {
             // 1. Load the saved monitor name from settings
@@ -77,6 +81,13 @@ namespace OledCareTool
                 StartPosition = FormStartPosition.Manual
             };
 
+            // Initialize the 1-hour disable timer
+            disableTimer = new System.Windows.Forms.Timer { Interval = 3600000 }; // 1 hour in ms
+            disableTimer.Tick += (s, e) => ReEnable();
+
+            // Create the menu item
+            disableMenuItem = new ToolStripMenuItem("Disable for 1 hour", null, ToggleDisable);
+
             trayIcon = new NotifyIcon()
             {
                 Icon = SystemIcons.Shield,
@@ -84,6 +95,7 @@ namespace OledCareTool
                 Visible = true,
                 Text = "OLED Care Tool"
             };
+            trayIcon.ContextMenuStrip.Items.Add(disableMenuItem);
             trayIcon.ContextMenuStrip.Items.Add("Settings", null, ShowSettings);
             trayIcon.ContextMenuStrip.Items.Add("-");
             trayIcon.ContextMenuStrip.Items.Add("Exit", null, (s, e) => Exit());
@@ -107,6 +119,29 @@ namespace OledCareTool
 
             // Ensure the overlay doesn't block clicks during tests
             overlay.Enabled = false;
+        }
+
+        private void ToggleDisable(object? sender, EventArgs e)
+        {
+            if (!isTemporarilyDisabled)
+            {
+                isTemporarilyDisabled = true;
+                disableTimer.Start();
+                disableMenuItem.Text = "Re-enable OLED Care";
+                targetOpacity = 0.0; // Immediately clear the screen
+                overlay.Hide();
+            }
+            else
+            {
+                ReEnable();
+            }
+        }
+
+        private void ReEnable()
+        {
+            isTemporarilyDisabled = false;
+            disableTimer.Stop();
+            disableMenuItem.Text = "Disable for 1 hour";
         }
 
         private void SetStartup(bool startWithWindows)
@@ -162,45 +197,35 @@ namespace OledCareTool
 
         private void CheckMousePosition()
         {
-            if (string.IsNullOrEmpty(oledDeviceName)) return;
+            // If the user manually disabled the tool, stop all logic
+            if (isTemporarilyDisabled || string.IsNullOrEmpty(oledDeviceName)) return;
 
             Point mousePos = Cursor.Position;
             Screen currentScreen = Screen.FromPoint(mousePos);
 
-            // Find the actual screen object for the saved device name
             Screen? targetScreen = Screen.AllScreens.FirstOrDefault(s => s.DeviceName == oledDeviceName);
 
             if (targetScreen == null)
             {
+                // Handle disconnected monitor
                 if (!monitorMissingAlerted)
                 {
                     trayIcon.ShowBalloonTip(3000, "OLED Care Tool",
-                        "The selected OLED monitor is no longer connected. Please update settings.", ToolTipIcon.Warning);
+                        "Monitor disconnected. Logic paused.", ToolTipIcon.Warning);
                     monitorMissingAlerted = true;
                 }
                 targetOpacity = 0.0;
                 return;
             }
 
-            monitorMissingAlerted = false;
-
+            // Standard logic follows...
             if (currentScreen.DeviceName != oledDeviceName || isTesting)
             {
                 targetOpacity = maxOpacity;
-
-                // REFINEMENT: Always ensure overlay matches the current target screen bounds.
-                // This handles resolution changes mid-session.
-                if (overlay.Bounds != targetScreen.Bounds)
-                {
-                    overlay.Bounds = targetScreen.Bounds;
-                }
-
+                if (overlay.Bounds != targetScreen.Bounds) overlay.Bounds = targetScreen.Bounds;
                 if (!overlay.Visible) overlay.Show();
             }
-            else
-            {
-                targetOpacity = 0.0;
-            }
+            else { targetOpacity = 0.0; }
         }
 
         private void UpdateOpacity()
@@ -239,12 +264,13 @@ namespace OledCareTool
             monitorTimer.Stop();
             fadeTimer.Stop();
             testTimeoutTimer.Stop();
+            disableTimer.Stop(); // Stop the new timer
 
             trayIcon.Visible = false;
 
-            // Explicitly dispose of the components
             overlay.Dispose();
             trayIcon.Dispose();
+            disableTimer.Dispose(); // Dispose the new timer
 
             Application.Exit();
         }
