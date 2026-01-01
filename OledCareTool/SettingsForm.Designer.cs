@@ -40,14 +40,14 @@
             // comboMonitors
             // 
             comboMonitors.FormattingEnabled = true;
-            comboMonitors.Location = new Point(249, 84);
+            comboMonitors.Location = new Point(48, 84);
             comboMonitors.Name = "comboMonitors";
-            comboMonitors.Size = new Size(302, 49);
+            comboMonitors.Size = new Size(693, 49);
             comboMonitors.TabIndex = 0;
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(481, 371);
+            btnSave.Location = new Point(553, 371);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(188, 58);
             btnSave.TabIndex = 1;
@@ -74,27 +74,25 @@
             chkFullBlackout.TabIndex = 3;
             chkFullBlackout.Text = "Full Blackout";
             chkFullBlackout.UseVisualStyleBackColor = true;
-            chkFullBlackout.CheckedChanged += (s, e) => trackDimLevel.Enabled = !chkFullBlackout.Checked;
             // 
             // trackDimLevel
             // 
             trackDimLevel.Location = new Point(481, 212);
-            trackDimLevel.Name = "trackDimLevel";
             trackDimLevel.Maximum = 100;
             trackDimLevel.Minimum = 10;
-            trackDimLevel.Value = 50;
+            trackDimLevel.Name = "trackDimLevel";
             trackDimLevel.Size = new Size(260, 114);
             trackDimLevel.TabIndex = 4;
-            trackDimLevel.Scroll += (s, e) => lblDimValue.Text = $"Dim: {trackDimLevel.Value}%";
+            trackDimLevel.Value = 50;
             // 
             // lblDimValue
             // 
             lblDimValue.AutoSize = true;
             lblDimValue.Location = new Point(563, 155);
-            lblDimValue.Text = "Dim: 50%";
             lblDimValue.Name = "lblDimValue";
-            lblDimValue.Size = new Size(97, 41);
+            lblDimValue.Size = new Size(144, 41);
             lblDimValue.TabIndex = 5;
+            lblDimValue.Text = "Dim: 50%";
             // 
             // SettingsForm
             // 
