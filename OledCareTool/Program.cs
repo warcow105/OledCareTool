@@ -3,14 +3,7 @@ using OledCareTool.Properties; // Replace OledCareTool with your project name
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-
-// [STAThread]
-// static void Main()
-// {
-//     Application.EnableVisualStyles();
-//     Application.SetCompatibleTextRenderingDefault(false);
-//     Application.Run(new OledAppContext());
-// }
+using System.Runtime.Versioning;
 
 namespace OledCareTool
 {
@@ -20,8 +13,22 @@ namespace OledCareTool
         ///  The main entry point for the application.
         /// </summary>
         [STAThread]
+        [SupportedOSPlatform("windows")]
         static void Main()
         {
+            // Runtime guard: ensure we run only on Windows 11 (initial build 22000) or newer.
+            // This both prevents running on unsupported OSes and helps the platform-compatibility
+            // analyzer when combined with the SupportedOSPlatform attributes on Windows-specific types.
+            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+            {
+                MessageBox.Show(
+                    "OLED Care Tool requires Windows 11 (build 22000 or newer). The application will now exit.",
+                    "Unsupported OS",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
             // Standard WinForms setup
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
@@ -32,6 +39,9 @@ namespace OledCareTool
             Application.Run(new OledAppContext());
         }
     }
+
+    // Mark this class as Windows-only to inform the analyzer that it uses Windows APIs.
+    [SupportedOSPlatform("windows")]
     public class OledAppContext : ApplicationContext
     {
         private NotifyIcon trayIcon;
@@ -43,6 +53,7 @@ namespace OledCareTool
         // private Timer fadeTimer;
         private string oledDeviceName;
         private double targetOpacity = 0;
+        private double maxOpacity = 1.0;
         private bool isTesting = false;
         private System.Windows.Forms.Timer testTimeoutTimer;
 
@@ -93,17 +104,22 @@ namespace OledCareTool
             overlay.Enabled = false;
         }
 
-        private void ShowSettings(object sender, EventArgs e)
+        private void ShowSettings(object? sender, EventArgs e)
         {
-            using (var settingsForm = new SettingsForm(oledDeviceName))
+            // Pass current settings to the form (you'll want to add these to Settings.Default later)
+            using (var settingsForm = new SettingsForm(oledDeviceName, maxOpacity >= 0.99, (int)(maxOpacity * 100)))
             {
                 if (settingsForm.ShowDialog() == DialogResult.OK)
                 {
                     oledDeviceName = settingsForm.SelectedDevice;
+
+                    // Set the target based on user choice
+                    maxOpacity = settingsForm.UseFullBlackout ? 1.0 : settingsForm.DimOpacity;
+
                     Settings.Default.OledDeviceName = oledDeviceName;
+                    // Note: You should add 'MaxOpacity' to your Project Settings to persist this
                     Settings.Default.Save();
 
-                    // If they clicked the Test button
                     if (settingsForm.TestRequested)
                     {
                         isTesting = true;
@@ -120,35 +136,21 @@ namespace OledCareTool
             Point mousePos = Cursor.Position;
             Screen currentScreen = Screen.FromPoint(mousePos);
 
-            // Logic: Trigger blackout if (Mouse is away) OR (Test mode is active)
             if (currentScreen.DeviceName != oledDeviceName || isTesting)
             {
-                targetOpacity = 1.0;
+                // Use the dynamic maxOpacity instead of 1.0
+                targetOpacity = maxOpacity;
 
-                // --- ADD THIS LOGIC BELOW ---
-                // Find the OLED screen and move the overlay to it
                 foreach (var s in Screen.AllScreens)
                 {
                     if (s.DeviceName == oledDeviceName)
                     {
-                        // Move the overlay only if it's not already there
-                        if (overlay.Bounds != s.Bounds)
-                        {
-                            overlay.Bounds = s.Bounds;
-                        }
-
-                        // Show the window if it's currently hidden
-                        if (!overlay.Visible)
-                        {
-                            overlay.Show();
-                        }
+                        if (overlay.Bounds != s.Bounds) overlay.Bounds = s.Bounds;
+                        if (!overlay.Visible) overlay.Show();
                     }
                 }
             }
-            else
-            {
-                targetOpacity = 0.0;
-            }
+            else { targetOpacity = 0.0; }
         }
 
         private void UpdateOpacity()

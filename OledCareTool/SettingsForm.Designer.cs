@@ -31,6 +31,10 @@
             comboMonitors = new ComboBox();
             btnSave = new Button();
             btnTest = new Button();
+            chkFullBlackout = new CheckBox();
+            trackDimLevel = new TrackBar();
+            lblDimValue = new Label();
+            ((System.ComponentModel.ISupportInitialize)trackDimLevel).BeginInit();
             SuspendLayout();
             // 
             // comboMonitors
@@ -43,7 +47,7 @@
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(306, 174);
+            btnSave.Location = new Point(481, 371);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(188, 58);
             btnSave.TabIndex = 1;
@@ -53,7 +57,7 @@
             // 
             // btnTest
             // 
-            btnTest.Location = new Point(306, 276);
+            btnTest.Location = new Point(48, 371);
             btnTest.Name = "btnTest";
             btnTest.Size = new Size(188, 58);
             btnTest.TabIndex = 2;
@@ -61,17 +65,53 @@
             btnTest.UseVisualStyleBackColor = true;
             btnTest.Click += btnTest_Click;
             // 
+            // chkFullBlackout
+            // 
+            chkFullBlackout.AutoSize = true;
+            chkFullBlackout.Location = new Point(48, 212);
+            chkFullBlackout.Name = "chkFullBlackout";
+            chkFullBlackout.Size = new Size(223, 45);
+            chkFullBlackout.TabIndex = 3;
+            chkFullBlackout.Text = "Full Blackout";
+            chkFullBlackout.UseVisualStyleBackColor = true;
+            chkFullBlackout.CheckedChanged += (s, e) => trackDimLevel.Enabled = !chkFullBlackout.Checked;
+            // 
+            // trackDimLevel
+            // 
+            trackDimLevel.Location = new Point(481, 212);
+            trackDimLevel.Name = "trackDimLevel";
+            trackDimLevel.Maximum = 100;
+            trackDimLevel.Minimum = 10;
+            trackDimLevel.Value = 50;
+            trackDimLevel.Size = new Size(260, 114);
+            trackDimLevel.TabIndex = 4;
+            trackDimLevel.Scroll += (s, e) => lblDimValue.Text = $"Dim: {trackDimLevel.Value}%";
+            // 
+            // lblDimValue
+            // 
+            lblDimValue.AutoSize = true;
+            lblDimValue.Location = new Point(563, 155);
+            lblDimValue.Text = "Dim: 50%";
+            lblDimValue.Name = "lblDimValue";
+            lblDimValue.Size = new Size(97, 41);
+            lblDimValue.TabIndex = 5;
+            // 
             // SettingsForm
             // 
             AutoScaleDimensions = new SizeF(17F, 41F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(lblDimValue);
+            Controls.Add(trackDimLevel);
+            Controls.Add(chkFullBlackout);
             Controls.Add(btnTest);
             Controls.Add(btnSave);
             Controls.Add(comboMonitors);
             Name = "SettingsForm";
             Text = "SettingsForm";
+            ((System.ComponentModel.ISupportInitialize)trackDimLevel).EndInit();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -79,5 +119,8 @@
         private ComboBox comboMonitors;
         private Button btnSave;
         private Button btnTest;
+        private CheckBox chkFullBlackout;
+        private TrackBar trackDimLevel;
+        private Label lblDimValue;
     }
 }
