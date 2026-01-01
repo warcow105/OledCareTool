@@ -164,10 +164,32 @@ namespace OledCareTool
 
         private void UpdateOpacity()
         {
-            if (overlay.Opacity < targetOpacity) overlay.Opacity += 0.05;
-            else if (overlay.Opacity > targetOpacity) overlay.Opacity -= 0.05;
+            // Use a threshold slightly larger than our increment step (0.05)
+            // to account for floating-point precision errors.
+            const double step = 0.05;
+            const double threshold = 0.051;
 
-            if (overlay.Opacity <= 0 && targetOpacity == 0) overlay.Hide();
+            if (Math.Abs(overlay.Opacity - targetOpacity) < threshold)
+            {
+                // Snap exactly to target and STOP redrawing
+                if (overlay.Opacity != targetOpacity)
+                {
+                    overlay.Opacity = targetOpacity;
+                }
+
+                // Performance: Hide the window if it's fully transparent
+                if (targetOpacity == 0 && overlay.Visible)
+                {
+                    overlay.Hide();
+                }
+                return;
+            }
+
+            // Otherwise, continue the fade transition
+            if (overlay.Opacity < targetOpacity)
+                overlay.Opacity += step;
+            else
+                overlay.Opacity -= step;
         }
 
         void Exit() { trayIcon.Visible = false; Application.Exit(); }
