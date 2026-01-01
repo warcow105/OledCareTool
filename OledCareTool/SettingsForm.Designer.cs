@@ -34,6 +34,7 @@
             chkFullBlackout = new CheckBox();
             trackDimLevel = new TrackBar();
             lblDimValue = new Label();
+            chkStartWithWindows = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)trackDimLevel).BeginInit();
             SuspendLayout();
             // 
@@ -94,11 +95,22 @@
             lblDimValue.TabIndex = 5;
             lblDimValue.Text = "Dim: 50%";
             // 
+            // chkStartWithWindows
+            // 
+            chkStartWithWindows.AutoSize = true;
+            chkStartWithWindows.Location = new Point(48, 281);
+            chkStartWithWindows.Name = "chkStartWithWindows";
+            chkStartWithWindows.Size = new Size(311, 45);
+            chkStartWithWindows.TabIndex = 6;
+            chkStartWithWindows.Text = "Start with Windows";
+            chkStartWithWindows.UseVisualStyleBackColor = true;
+            // 
             // SettingsForm
             // 
             AutoScaleDimensions = new SizeF(17F, 41F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(chkStartWithWindows);
             Controls.Add(lblDimValue);
             Controls.Add(trackDimLevel);
             Controls.Add(chkFullBlackout);
@@ -120,5 +132,6 @@
         private CheckBox chkFullBlackout;
         private TrackBar trackDimLevel;
         private Label lblDimValue;
+        private CheckBox chkStartWithWindows;
     }
 }

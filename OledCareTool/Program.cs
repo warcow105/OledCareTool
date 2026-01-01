@@ -56,6 +56,7 @@ namespace OledCareTool
         private double maxOpacity = 1.0;
         private bool isTesting = false;
         private System.Windows.Forms.Timer testTimeoutTimer;
+        private bool monitorMissingAlerted = false;
 
         public OledAppContext()
         {
@@ -108,13 +109,32 @@ namespace OledCareTool
             overlay.Enabled = false;
         }
 
+        private void SetStartup(bool startWithWindows)
+        {
+            // The registry key where Windows looks for startup apps
+            string runKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+            using (Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(runKey, true))
+            {
+                if (key != null)
+                {
+                    if (startWithWindows)
+                        // Add the path to your compiled .exe to the registry
+                        key.SetValue("OledCareTool", Application.ExecutablePath);
+                    else
+                        // Remove it if the user unchecks the box
+                        key.DeleteValue("OledCareTool", false);
+                }
+            }
+        }
+
         private void ShowSettings(object? sender, EventArgs e)
         {
             // Retrieve current values to pass to the form
             bool currentBlackout = Settings.Default.UseFullBlackout;
             int currentDim = Settings.Default.DimLevel;
+            bool currentStart = Settings.Default.StartWithWindows;
 
-            using (var settingsForm = new SettingsForm(oledDeviceName, currentBlackout, currentDim))
+            using (var settingsForm = new SettingsForm(oledDeviceName, currentBlackout, currentDim, currentStart))
             {
                 if (settingsForm.ShowDialog() == DialogResult.OK)
                 {
@@ -127,6 +147,8 @@ namespace OledCareTool
                     Settings.Default.UseFullBlackout = settingsForm.UseFullBlackout;
                     // Store as int (0-100) to match the TrackBar logic
                     Settings.Default.DimLevel = (int)(settingsForm.DimOpacity * 100);
+                    Settings.Default.StartWithWindows = settingsForm.StartWithWindows;
+                    SetStartup(settingsForm.StartWithWindows);
                     Settings.Default.Save();
 
                     if (settingsForm.TestRequested)
@@ -145,21 +167,40 @@ namespace OledCareTool
             Point mousePos = Cursor.Position;
             Screen currentScreen = Screen.FromPoint(mousePos);
 
+            // Find the actual screen object for the saved device name
+            Screen? targetScreen = Screen.AllScreens.FirstOrDefault(s => s.DeviceName == oledDeviceName);
+
+            if (targetScreen == null)
+            {
+                if (!monitorMissingAlerted)
+                {
+                    trayIcon.ShowBalloonTip(3000, "OLED Care Tool",
+                        "The selected OLED monitor is no longer connected. Please update settings.", ToolTipIcon.Warning);
+                    monitorMissingAlerted = true;
+                }
+                targetOpacity = 0.0;
+                return;
+            }
+
+            monitorMissingAlerted = false;
+
             if (currentScreen.DeviceName != oledDeviceName || isTesting)
             {
-                // Use the dynamic maxOpacity instead of 1.0
                 targetOpacity = maxOpacity;
 
-                foreach (var s in Screen.AllScreens)
+                // REFINEMENT: Always ensure overlay matches the current target screen bounds.
+                // This handles resolution changes mid-session.
+                if (overlay.Bounds != targetScreen.Bounds)
                 {
-                    if (s.DeviceName == oledDeviceName)
-                    {
-                        if (overlay.Bounds != s.Bounds) overlay.Bounds = s.Bounds;
-                        if (!overlay.Visible) overlay.Show();
-                    }
+                    overlay.Bounds = targetScreen.Bounds;
                 }
+
+                if (!overlay.Visible) overlay.Show();
             }
-            else { targetOpacity = 0.0; }
+            else
+            {
+                targetOpacity = 0.0;
+            }
         }
 
         private void UpdateOpacity()
@@ -192,6 +233,20 @@ namespace OledCareTool
                 overlay.Opacity -= step;
         }
 
-        void Exit() { trayIcon.Visible = false; Application.Exit(); }
+        void Exit()
+        {
+            // Stop all timers first to prevent logic firing during cleanup
+            monitorTimer.Stop();
+            fadeTimer.Stop();
+            testTimeoutTimer.Stop();
+
+            trayIcon.Visible = false;
+
+            // Explicitly dispose of the components
+            overlay.Dispose();
+            trayIcon.Dispose();
+
+            Application.Exit();
+        }
     }
 }

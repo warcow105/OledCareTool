@@ -15,6 +15,7 @@ namespace OledCareTool
         public bool TestRequested { get; private set; } = false;
         public bool UseFullBlackout { get; private set; }
         public double DimOpacity { get; private set; }
+        public bool StartWithWindows { get; private set; }
 
         private class MonitorItem
         {
@@ -22,11 +23,12 @@ namespace OledCareTool
             public string DeviceName { get; set; } = string.Empty;
             public override string ToString() => FriendlyName;
         }
-        public SettingsForm(string currentDevice, bool currentBlackout, int currentDim)
+        public SettingsForm(string currentDevice, bool currentBlackout, int currentDim, bool currentStart)
         {
             InitializeComponent();
             chkFullBlackout.CheckedChanged += (s, e) => trackDimLevel.Enabled = !chkFullBlackout.Checked;
             trackDimLevel.Scroll += (s, e) => lblDimValue.Text = $"Dim: {trackDimLevel.Value}%";
+            chkStartWithWindows.Checked = currentStart;
             // Populate dropdown with all available monitors
             // var monitors = Screen.AllScreens.Select(s => s.DeviceName).ToArray();
             // comboMonitors.Items.AddRange(monitors);
@@ -96,6 +98,7 @@ namespace OledCareTool
             }
             UseFullBlackout = chkFullBlackout.Checked;
             DimOpacity = trackDimLevel.Value / 100.0;
+            StartWithWindows = chkStartWithWindows.Checked;
         }
     }
 }
