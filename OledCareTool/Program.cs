@@ -68,6 +68,13 @@ namespace OledCareTool
             oledDeviceName = Settings.Default.OledDeviceName;
             bool isBlackout = Settings.Default.UseFullBlackout;
             int dimPercent = Settings.Default.DimLevel;
+            if (dimPercent < 10 || dimPercent > 100)
+            {
+                dimPercent = 50;  // Safe default
+                Settings.Default.DimLevel = dimPercent;
+                Settings.Default.Save();
+            }
+
             // 2. Set the current maxOpacity based on those settings
             maxOpacity = isBlackout ? 1.0 : (dimPercent / 100.0);
 
@@ -112,7 +119,8 @@ namespace OledCareTool
 
             // Initialize the 10-second test timer
             testTimeoutTimer = new System.Windows.Forms.Timer { Interval = 10000 };
-            testTimeoutTimer.Tick += (s, e) => {
+            testTimeoutTimer.Tick += (s, e) =>
+            {
                 isTesting = false;
                 testTimeoutTimer.Stop();
             };
@@ -148,17 +156,45 @@ namespace OledCareTool
         {
             // The registry key where Windows looks for startup apps
             string runKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-            using (Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(runKey, true))
+
+            try
             {
-                if (key != null)
+                using (Microsoft.Win32.RegistryKey? key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(runKey, true))
                 {
-                    if (startWithWindows)
-                        // Add the path to your compiled .exe to the registry
-                        key.SetValue("OledCareTool", Application.ExecutablePath);
+                    if (key != null)
+                    {
+                        if (startWithWindows)
+                            // Add the path to your compiled .exe to the registry
+                            key.SetValue("OledCareTool", Application.ExecutablePath);
+                        else
+                            // Remove it if the user unchecks the box
+                            key.DeleteValue("OledCareTool", false);
+                    }
                     else
-                        // Remove it if the user unchecks the box
-                        key.DeleteValue("OledCareTool", false);
+                    {
+                        trayIcon.ShowBalloonTip(3000, "OLED Care Tool",
+                            "Unable to access startup registry key. Check admin permissions.",
+                            ToolTipIcon.Warning);
+                    }
                 }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                trayIcon.ShowBalloonTip(3000, "OLED Care Tool",
+                    "Unable to modify startup registry key. Admin permissions required.",
+                    ToolTipIcon.Warning);
+            }
+            catch (System.Security.SecurityException)
+            {
+                trayIcon.ShowBalloonTip(3000, "OLED Care Tool",
+                    "Security policy prevents registry modification.",
+                    ToolTipIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                trayIcon.ShowBalloonTip(3000, "OLED Care Tool",
+                    $"Registry error: {ex.Message}",
+                    ToolTipIcon.Warning);
             }
         }
 
@@ -218,7 +254,8 @@ namespace OledCareTool
                 return;
             }
 
-            // Standard logic follows...
+            monitorMissingAlerted = false;
+
             if (currentScreen.DeviceName != oledDeviceName || isTesting)
             {
                 targetOpacity = maxOpacity;
