@@ -34,5 +34,29 @@ namespace OledCareTool.Properties {
                 this["OledDeviceName"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool UseFullBlackout {
+            get {
+                return ((bool)(this["UseFullBlackout"]));
+            }
+            set {
+                this["UseFullBlackout"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("50")]
+        public int DimLevel {
+            get {
+                return ((int)(this["DimLevel"]));
+            }
+            set {
+                this["DimLevel"] = value;
+            }
+        }
     }
 }

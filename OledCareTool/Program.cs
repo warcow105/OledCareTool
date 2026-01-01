@@ -61,6 +61,10 @@ namespace OledCareTool
         {
             // 1. Load the saved monitor name from settings
             oledDeviceName = Settings.Default.OledDeviceName;
+            bool isBlackout = Settings.Default.UseFullBlackout;
+            int dimPercent = Settings.Default.DimLevel;
+            // 2. Set the current maxOpacity based on those settings
+            maxOpacity = isBlackout ? 1.0 : (dimPercent / 100.0);
 
             overlay = new Form
             {
@@ -106,18 +110,23 @@ namespace OledCareTool
 
         private void ShowSettings(object? sender, EventArgs e)
         {
-            // Pass current settings to the form (you'll want to add these to Settings.Default later)
-            using (var settingsForm = new SettingsForm(oledDeviceName, maxOpacity >= 0.99, (int)(maxOpacity * 100)))
+            // Retrieve current values to pass to the form
+            bool currentBlackout = Settings.Default.UseFullBlackout;
+            int currentDim = Settings.Default.DimLevel;
+
+            using (var settingsForm = new SettingsForm(oledDeviceName, currentBlackout, currentDim))
             {
                 if (settingsForm.ShowDialog() == DialogResult.OK)
                 {
+                    // 1. Update local state
                     oledDeviceName = settingsForm.SelectedDevice;
-
-                    // Set the target based on user choice
                     maxOpacity = settingsForm.UseFullBlackout ? 1.0 : settingsForm.DimOpacity;
 
+                    // 2. Persist to disk
                     Settings.Default.OledDeviceName = oledDeviceName;
-                    // Note: You should add 'MaxOpacity' to your Project Settings to persist this
+                    Settings.Default.UseFullBlackout = settingsForm.UseFullBlackout;
+                    // Store as int (0-100) to match the TrackBar logic
+                    Settings.Default.DimLevel = (int)(settingsForm.DimOpacity * 100);
                     Settings.Default.Save();
 
                     if (settingsForm.TestRequested)
