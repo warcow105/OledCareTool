@@ -1,4 +1,5 @@
 ## This is a simple tool to help with OLED monitor care in **MULTI-MONITOR** setups.  
+## Windows Smart App Control started blocking the app on my computer because it is unsigned. I disabled SAC, but the choice is up to you.  
 ### This is an application that sits in the taskbar and when the mouse leaves the selected screen, that screen dims/blacks out. When the mouse moves back to the screen it fades back in.  
 ### Right click the icon(sheild) in the taskbar and click settings to set the monitor you want to dim for protection, full blackout/dim level, and if it should start with windows. The dim level is the amount to dim it, not the final percentage.  For example 80% means the screen will go to 20% brightness.  
 # WHEN ENABLING START WITH WINDOWS: Windows will try to start it where you originally ran it from, so put it in a folder you don't plan on moving!
